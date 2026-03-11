@@ -89,7 +89,7 @@ int main(int argc, char** argv)
          {0.5f, -0.5f, 0.0f},
          {0.5f, 0.5f, 0.0f},
          {-0.5f, 0.5f, 0.0f},
-         {-0.5f, -0.5f, -0.5f},
+         {-0.5f, -0.5f, -0.0f},
          {0.5f, -0.5f, -0.5f},
          {0.5f, 0.5f, -0.5f},
          {-0.5f, 0.5f, -0.5f}}); // VK_FORMAT_R32G32B32_SFLOAT, VK_VERTEX_INPUT_RATE_INSTANCE, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_SHARING_MODE_EXCLUSIVE
@@ -129,7 +129,7 @@ int main(int argc, char** argv)
     drawCommands->addChild(vsg::DrawIndexed::create(12, 1, 0, 0, 0));
 
     // add drawCommands to transform
-    transform->addChild(drawCommands);
+   transform->addChild(drawCommands);
 
     // create the viewer and assign window(s) to it
     auto viewer = vsg::Viewer::create();
@@ -156,7 +156,7 @@ int main(int argc, char** argv)
     viewer->compile();
 
     // assign a CloseHandler to the Viewer to respond to pressing Escape or the window close button
-    viewer->addEventHandlers({vsg::CloseHandler::create(viewer)});
+    viewer->addEventHandlers({vsg::CloseHandler::create(viewer), vsg::Trackball::create(camera)});
 
     // main frame loop
     while (viewer->advanceToNextFrame())
@@ -166,7 +166,7 @@ int main(int argc, char** argv)
 
         // animate the transform
         float time = std::chrono::duration<float, std::chrono::seconds::period>(viewer->getFrameStamp()->time - viewer->start_point()).count();
-        transform->matrix = vsg::rotate(time * vsg::radians(90.0f), vsg::vec3(0.0f, 0.0, 1.0f));
+    //    transform->matrix = vsg::rotate(time * vsg::radians(90.0f), vsg::vec3(0.0f, 0.0, 1.0f));
 
         viewer->update();
 

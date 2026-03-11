@@ -1,9 +1,16 @@
+#include "IntersectionHandler.h"
+#include "IntersectionHandler2.h"
+#include "Node.h"
+
 #include <cassert>
 #include <iostream>
 #include <stdexcept>
 #include <string>
 
+#include "StatsCounter.h"
+
 #include "vsg/all.h"
+//#include <vsgXchange/all.h>
 
 std::string VERT{R"(
 #version 450
@@ -28,6 +35,7 @@ layout(location = 0) out vec4 fragmentColor;
 void main()
 {
     fragmentColor = rasterColor;
+   //fragmentColor = vec4(1,0,0,1);
 }
 )"};
 
@@ -211,6 +219,56 @@ vsg::ref_ptr<vsg::Group> createScene(
     return sceneGraph;
 }
 
+vsg::ref_ptr<vsg::Options> options;
+vsg::ref_ptr<vsg::Text> fps_text;
+
+void createText(vsg::CommandLine& arguments, vsg::Window* window)
+{
+    options = vsg::Options::create();
+    options->sharedObjects = vsg::SharedObjects::create();
+    options->fileCache = vsg::getEnv("VSG_FILE_CACHE");
+    options->paths = vsg::getEnvPaths("VSG_FILE_PATH");
+    //  auto font_filename = arguments.value(std::string("I:\\vsg\\vsgExamples\\data\\fonts\\times.vsgb"), "-f");
+    auto font_filename = arguments.value(std::string("fonts/times.vsgb"), "-f");
+    auto font = vsg::read_cast<vsg::Font>(font_filename, options);
+
+    auto layout = vsg::StandardLayout::create();
+    layout->horizontalAlignment = vsg::StandardLayout::CENTER_ALIGNMENT;
+    layout->position = vsg::vec3(50.0f, window->extent2D().height - 30.0f, 0.5f);
+
+    layout->horizontal = {30, 0, 0};
+    layout->vertical = {0, 30, 0};
+    layout->color = vsg::vec4(1.0f, 0.0f, 1.0f, 1.0f);
+    layout->outlineWidth = 0.1f;
+    layout->billboard = true;
+
+    auto text = vsg::Text::create();
+    text->text = vsg::stringValue::create("FPS: 0");
+    text->font = font;
+    text->layout = layout;
+    text->technique = vsg::GpuLayoutTechnique::create();
+    // text->setup(0, options);
+    text->setup(32, options);
+    fps_text = text;
+}
+
+struct AddNodeOperation : public vsg::Inherit<vsg::Operation, AddNodeOperation>
+{
+    vsg::ref_ptr<vsg::Group> root;
+    vsg::ref_ptr<vsg::Node> node;
+
+    AddNodeOperation(vsg::Group* r, vsg::Node* n) :
+        root(r),
+        node(n)
+    {
+    }
+
+    void run() override
+    {
+        root->addChild(node);
+    }
+};
+
 int main(int argc, char** argv)
 {
     try
@@ -223,6 +281,7 @@ int main(int argc, char** argv)
         auto numDrawCalls = arguments.value(1u, {"--numDrawCalls", "-c"});
         auto numTriangles = arguments.value(vsg::uivec3{10, 10, 10}, {"--numTriangles", "-n"});
 
+        //auto sceneGraph = vsg::Group::create();
         auto sceneGraph = createScene(numPipelines, numDrawCalls, numTriangles);
 
         /// Window
@@ -251,6 +310,7 @@ int main(int argc, char** argv)
         }
 
         /// Camera
+#if 0
         auto lookAt = vsg::LookAt::create(
             vsg::dvec3{150, 175, 200},
             vsg::dvec3{0, 0, 0},
@@ -258,6 +318,25 @@ int main(int argc, char** argv)
         auto perspective = vsg::Perspective::create();
         auto viewportState = vsg::ViewportState::create(window->extent2D());
         auto camera = vsg::Camera::create(perspective, lookAt, viewportState);
+#endif
+
+        /*vsg::ref_ptr<vsg::StateGroup> fps_state_group = */
+        createText(arguments, window);
+        //sceneGraph->addChild(fps_state_group);
+
+        // camera related details
+        // compute the bounds of the scene graph to help position camera
+        vsg::ComputeBounds computeBounds;
+        sceneGraph->accept(computeBounds);
+        vsg::dvec3 centre = (computeBounds.bounds.min + computeBounds.bounds.max) * 0.5;
+        double radius = vsg::length(computeBounds.bounds.max - computeBounds.bounds.min) * 0.6;
+        double nearFarRatio = 0.001;
+
+        // set up the camera
+        auto viewport = vsg::ViewportState::create(window->extent2D());
+        auto perspective = vsg::Perspective::create(30.0, static_cast<double>(window->extent2D().width) / static_cast<double>(window->extent2D().height), nearFarRatio * radius, radius * 1000.0);
+        auto lookAt = vsg::LookAt::create(centre + vsg::dvec3(0.0, -radius * 3.5, 0.0), centre, vsg::dvec3(0.0, 0.0, 1.0));
+        auto camera = vsg::Camera::create(perspective, lookAt, viewport);
 
         /// Viewer and CommandGraph
         auto viewer = vsg::Viewer::create();
@@ -269,13 +348,133 @@ int main(int argc, char** argv)
         viewer->assignRecordAndSubmitTaskAndPresentation({commandGraph});
 
         /// View and RenderGraph
-        auto view = vsg::View::create(camera);
-        auto renderGraph = vsg::RenderGraph::create(window, view);
+        auto view3d = vsg::View::create(camera);
+        auto renderGraph = vsg::RenderGraph::create(window);
+        renderGraph->addChild(view3d); // 3D³¡¾°
+
         commandGraph->addChild(renderGraph);
 
+        {
+            constexpr int RANGE = 500;
+            for (int i = 0; i < 10000; i++)
+            {
+                auto node = vsg::read_cast<vsg::Node>("models/teapot.vsgt", options);
+                auto transform = vsg::MatrixTransform::create();
+
+                transform->matrix = vsg::translate(static_cast<double>(rand() % RANGE), static_cast<double>(rand() % RANGE), static_cast<double>(rand() % RANGE));
+                transform->addChild(node);
+                sceneGraph->addChild(transform);
+            }
+
+            auto node1 = vsg::read_cast<vsg::Node>("models/lz.vsgt", options);
+            auto transform1 = vsg::MatrixTransform::create();
+            transform1->matrix = vsg::translate(0.0, 0.0, 10.0);
+            transform1->addChild(node1);
+            sceneGraph->addChild(transform1);
+
+            auto transform2 = vsg::MatrixTransform::create();
+            transform2->matrix = vsg::translate(0.0, 0.0, 30.0);
+            transform2->addChild(node1);
+            sceneGraph->addChild(transform2);
+
+            auto node = vsg::read_cast<vsg::Node>("models/lz.vsgt", options);
+            sceneGraph->addChild(node);
+        }
+
+        {
+            auto hudProjection = vsg::Orthographic::create(
+                0.0, window->extent2D().width,
+                0.0, window->extent2D().height,
+                -1.0, 1.0);
+
+            auto hudViewMatrix = vsg::LookAt::create(vsg::dvec3(0, 0, 1), vsg::dvec3(), vsg::dvec3(0, 1, 0));
+            auto hudViewport = vsg::ViewportState::create(window->extent2D());
+
+            auto hudCamera = vsg::Camera::create(
+                hudProjection,
+                hudViewMatrix,
+                hudViewport);
+
+            auto hudView = vsg::View::create(hudCamera);
+            hudView->addChild(fps_text);
+            //hudView->addChild(createScene(numPipelines, numDrawCalls, numTriangles));
+            renderGraph->addChild(hudView); // HUD
+        }
+
+        auto light = vsg::DirectionalLight::create();
+        light->direction.set(-1.0f, -1.0f, -1.0f);
+        light->color.set(1.0f, 1.0f, 1.0f);
+        light->intensity = 1.0f;
+
+        auto layer_1 = vsg::Layer::create();
+        layer_1->binNumber = 0;
+        layer_1->value = 0;
+        layer_1->child = sceneGraph;
+
+        auto root = vsg::Group::create();
+
+        auto layer_2 = vsg::Layer::create();
+        layer_2->binNumber = -1;
+        layer_2->value = -1;
+        root->addChild(layer_2);
+
+        root->addChild(layer_1);
         /// Add the scene to the View and compile
-        view->addChild(sceneGraph);
+        view3d->addChild(root);
+        root->addChild(light);
+
+        //{
+        auto builder = vsg::Builder::create();
+        builder->options = options;
+
+        auto intersectionHandler = IntersectionHandler::create(builder, camera, sceneGraph, nullptr, radius * 0.1, options);
+        intersectionHandler->viewer = viewer;
+        viewer->addEventHandler(intersectionHandler);
+
+        /*      auto handle = IntersectionHandler2::create(sceneGraph, camera);
+              viewer->addEventHandler(handle);*/
+
+        auto highLightGroup = vsg::Group::create();
+        intersectionHandler->highLightGroup = highLightGroup;
+
+        auto trans = vsg::MatrixTransform::create(vsg::translate(vsg::dvec3(0, 0, 0)));
+        layer_2->child = trans;
+
+        trans->addChild(highLightGroup);
+        //}
+
+        auto t1 = vsg::clock::now();
+        for (int i = 0; i < 5; i++)
+        {
+            float sz = rand() % 100;
+            float z = rand() % 1000;
+
+            auto node = createQuadTest(sz, z);
+            Scene::instance().addNode(node);
+
+            vsg::ref_ptr<vsg::Group> testGroup = convert(*node);
+            sceneGraph->addChild(testGroup);
+        }
+        auto t2 = vsg::clock::now();
+
+        //auto grp = createFromId(1);
+        //sceneGraph->addChild(grp);
+
+        std::cout << "time: " << DELTA_TIME(t2, t1) << "\n";
+        /*      auto commandGraph = vsg::createCommandGraphForView(window, camera, sceneGraph);
+             viewer->assignRecordAndSubmitTaskAndPresentation({commandGraph});*/
+
         viewer->compile();
+        StatsCounter counter;
+        sceneGraph->accept(counter);
+
+        std::cout << "Triangles: " << counter.triangles << std::endl;
+        std::cout << "Vertices : " << counter.vertices << std::endl;
+        std::cout << "Indices : " << counter.indices << std::endl;
+        std::cout << "DrawCalls : " << counter.drawCalls << std::endl;
+
+        auto lastTime = vsg::clock::now();
+        uint32_t frameCount = 0;
 
         while (viewer->advanceToNextFrame())
         {
@@ -283,7 +482,29 @@ int main(int argc, char** argv)
             viewer->update();
             viewer->recordAndSubmit();
             viewer->present();
+
+            frameCount++;
+
+            auto now = vsg::clock::now();
+            double t = DELTA_TIME(now, lastTime) / 1000.0;
+
+            if (t > 0.1)
+            {
+                double fps = frameCount / t;
+                //  std::cout << "FPS: " <<  fps << std::endl;
+                if (fps_text)
+                {
+                    fps_text->text = vsg::stringValue::create("FPS: " + std::to_string(static_cast<int>(fps)));
+                    fps_text->setup(32, options);
+                }
+
+                lastTime = now;
+                frameCount = 0;
+            }
         }
+        options = nullptr;
+        fps_text = nullptr;
+        Scene::instance().reset();
     }
     catch (const vsg::Exception& ve)
     {

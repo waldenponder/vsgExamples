@@ -174,7 +174,7 @@ int main(int argc, char** argv)
     windowTraits->debugLayer = arguments.read({"--debug", "-d"});
     windowTraits->apiDumpLayer = arguments.read({"--api", "-a"});
     arguments.read({"--window", "-w"}, windowTraits->width, windowTraits->height);
-    auto font_filename = arguments.value(std::string("fonts/times.vsgb"), "-f");
+    auto font_filename = arguments.value(std::string("I:\\vsg\\vsgExamples\\data\\fonts\\times.vsgb"), "-f");
     auto output_filename = arguments.value(std::string(), "-o");
     auto render_all_glyphs = arguments.read("--all");
     auto enable_tests = arguments.read("--test");
