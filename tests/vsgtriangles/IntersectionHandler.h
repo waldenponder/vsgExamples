@@ -1,11 +1,5 @@
 #pragma once
-#include <vsg/commands/Draw.h>
-#include <vsg/commands/DrawIndexed.h>
 #include <vsg/core/Visitor.h>
-#include <vsg/nodes/Node.h>
-#include <vsg/nodes/VertexIndexDraw.h>
-#include <vsg/state/GraphicsPipeline.h>
-#include <vsg/state/InputAssemblyState.h>
 #include <vsg/utils/Builder.h>
 #include <vsg/utils/LineSegmentIntersector.h>
 

@@ -68,11 +68,11 @@ vsg::ref_ptr<vsg::Group> createFromId(int id, bool highLight)
 #endif 
     node->material.diffuse.set(0.f, 0, 1.f, 1.0f);
 
-    //if (highLight)
-    //{
-    //    node->depthBiasSlopeFactor = -1;
-    //    node->depthBiasConstantFactor = -1;
-    //}
+    if (highLight)
+    {
+        node->depthBiasSlopeFactor = -1;
+        node->depthBiasConstantFactor = -1;
+    }
     Scene::instance().addNode(node);
 
     vsg::ref_ptr<vsg::Group> group = convert(*node);
