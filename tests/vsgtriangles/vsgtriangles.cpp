@@ -8,6 +8,7 @@
 #include <string>
 
 #include "StatsCounter.h"
+#include "Test.h"
 
 #include "vsg/all.h"
 //#include <vsgXchange/all.h>
@@ -281,8 +282,11 @@ int main(int argc, char** argv)
         auto numDrawCalls = arguments.value(1u, {"--numDrawCalls", "-c"});
         auto numTriangles = arguments.value(vsg::uivec3{10, 10, 10}, {"--numTriangles", "-n"});
 
-        //auto sceneGraph = vsg::Group::create();
+#if  0
+        auto sceneGraph = vsg::Group::create();
+#else
         auto sceneGraph = createScene(numPipelines, numDrawCalls, numTriangles);
+#endif
 
         /// Window
         auto windowTraits = vsg::WindowTraits::create();
@@ -354,6 +358,7 @@ int main(int argc, char** argv)
 
         commandGraph->addChild(renderGraph);
 
+        if (0)
         {
             constexpr int RANGE = 500;
             for (int i = 0; i < 10000; i++)
@@ -456,6 +461,10 @@ int main(int argc, char** argv)
             sceneGraph->addChild(testGroup);
         }
         auto t2 = vsg::clock::now();
+
+
+        vsg::ref_ptr<vsg::Group> group3 = test3();
+        sceneGraph->addChild(group3);
 
         //auto grp = createFromId(1);
         //sceneGraph->addChild(grp);
