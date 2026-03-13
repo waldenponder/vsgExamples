@@ -96,5 +96,3 @@ public:
     }
 };
 
-
-#define DELTA_TIME(now, last) std::chrono::duration<double, std::chrono::milliseconds::period>(now - last).count()

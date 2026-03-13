@@ -9,7 +9,7 @@
 #include <vsg/state/material.h>
 #include <vsg/utils/Builder.h>
 #include <vsg/utils/LineSegmentIntersector.h>
-
+#include "tsl/robin_map.h"
 
 struct NodeDefine : public vsg::Object
 {
@@ -47,7 +47,8 @@ public:
 private:
     Scene() = default;
 
-    std::unordered_map<int, vsg::ref_ptr<NodeDefine>> map_;
+//    std::unordered_map<int, vsg::ref_ptr<NodeDefine>> map_;
+    tsl::robin_map<int, vsg::ref_ptr<NodeDefine>> map_;
 };
 
 vsg::ref_ptr<vsg::Group> convert(const NodeDefine& node);

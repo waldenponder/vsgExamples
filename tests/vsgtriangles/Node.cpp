@@ -5,6 +5,7 @@
 #include <vsg/ui/KeyEvent.h>
 #include <vsg/all.h>
 
+
 vsg::ref_ptr<vsg::ShaderSet> shaderSet;
 
 static int s_id = 0;

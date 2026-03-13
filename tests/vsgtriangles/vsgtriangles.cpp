@@ -36,7 +36,7 @@ layout(location = 0) out vec4 fragmentColor;
 void main()
 {
     fragmentColor = rasterColor;
-   //fragmentColor = vec4(1,0,0,1);
+  // fragmentColor = vec4(1,0,0,1);
 }
 )"};
 
@@ -462,9 +462,12 @@ int main(int argc, char** argv)
         }
         auto t2 = vsg::clock::now();
 
-
         vsg::ref_ptr<vsg::Group> group3 = test3();
         sceneGraph->addChild(group3);
+
+        auto t3 = vsg::MatrixTransform::create(vsg::translate(-500.0, 1.0, 100.0));
+        t3->addChild(group3);
+        sceneGraph->addChild(t3);
 
         //auto grp = createFromId(1);
         //sceneGraph->addChild(grp);

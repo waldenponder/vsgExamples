@@ -121,6 +121,7 @@ vsg::ref_ptr<vsg::Node> createHighlight(vsg::ref_ptr<vsg::LineSegmentIntersector
     return node2;
 }
 
+#if 0
 vsg::ref_ptr<vsg::Node> createHighlight3(vsg::ref_ptr<vsg::LineSegmentIntersector::Intersection> intersection)
 {
     if (!shaderSet_) shaderSet_ = vsg::createPhongShaderSet();
@@ -254,6 +255,7 @@ vsg::ref_ptr<vsg::Node> createHighlight3(vsg::ref_ptr<vsg::LineSegmentIntersecto
 
     return node2;*/
 }
+#endif
 
 void IntersectionHandler::apply(vsg::KeyPressEvent& keyPress)
 {
